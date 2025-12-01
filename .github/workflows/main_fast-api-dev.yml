@@ -52,7 +52,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'fast-api-dev'
-          slot-name: 'Dev'
+          slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_206F87C8BCD342A199E6EE84BEE5836F }}
 
       - name: Deployment info
