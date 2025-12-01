@@ -1,37 +1,27 @@
-name: Build and deploy FastAPI to Azure Web App
+name: Build and deploy Python FastAPI to Azure Web App
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
-      - name: Checkout code
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Upload artifact (FastAPI app only)
+      - name: Upload artifact (only app folder + requirements)
         uses: actions/upload-artifact@v4
         with:
           name: fastapi-app
           path: |
             app/
             requirements.txt
-            startup.txt
-            # If you use a startup command from file
 
   deploy:
     runs-on: ubuntu-latest
@@ -42,16 +32,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: fastapi-app
-          path: ./deploy
+          path: .
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "fast-api-dev"
-          slot-name: "Production"
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_206F87C8BCD342A199E6EE84BEE5836F }}
-          package: ./deploy
-          # 👆 THIS LINE SETS THE DEPLOYMENT LOCATION
-
-      - name: Deployment complete
-        run: echo "FastAPI deployed successfully."
+          app-name: fast-api-dev
+          slot-name: Production
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .
