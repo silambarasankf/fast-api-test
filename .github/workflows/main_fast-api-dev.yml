@@ -1,8 +1,8 @@
-name: Deploy FastAPI
+name: Deploy FastAPI to Azure Web App
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -12,22 +12,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Upload deployable artifact
+      - name: Upload entire project as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fastapi-package
+          name: fastapi-app
           path: |
-            app/
-            requirements.txt
+            .
+            !.git/
+            !.github/
+            !venv/
+            !antenv/
+            !__pycache__/
 
   deploy:
     runs-on: ubuntu-latest
@@ -37,10 +32,10 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: fastapi-package
+          name: fastapi-app
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          app-name: fast-api-dev
+          app-name: "fast-api-dev"
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
