@@ -18,6 +18,7 @@ jobs:
         mkdir -p upload
         cp -r app upload/app
         cp requirements.txt upload/
+        cp startup.sh upload/
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
