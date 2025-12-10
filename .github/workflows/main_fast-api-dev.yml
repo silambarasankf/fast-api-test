@@ -17,9 +17,7 @@ jobs:
       run: |
         mkdir -p upload
         cp -r app upload/app
-        cp requirements.txt upload/
-        cp startup.sh upload/
-        chmod +x upload/startup.sh
+        cp requirements.txt upload/requirements.txt
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -36,95 +34,10 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: fastapi-app
-        path: upload/
 
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v3
       with:
         app-name: fast-api-dev
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: upload/
-
-    - name: Verify startup.sh exists in wwwroot (Kudu VFS)
-      env:
-        AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-      run: |
-        set -e
-        APP_NAME=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -oP '(?<=publishUrl=")[^"]*' | cut -d'.' -f1)
-        USERNAME=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -oP '(?<=userName=")[^"]*')
-        PASSWORD=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -oP '(?<=userPWD=")[^"]*')
-        echo "Checking /site/wwwroot/startup.sh via Kudu VFS..."
-        STATUS=$(curl -sS -o /dev/null -w "%{http_code}" \
-          -u "${USERNAME}:${PASSWORD}" \
-          "https://${APP_NAME}.scm.azurewebsites.net/api/vfs/site/wwwroot/startup.sh")
-        echo "VFS status: $STATUS"
-        if [ "$STATUS" != "200" ]; then
-          echo "startup.sh not found in wwwroot; deployment layout incorrect."
-          exit 1
-        fi
-
-    - name: Wait for SCM to stabilize
-      run: |
-        echo "Waiting 60s to avoid SCM restart conflict..."
-        sleep 60
-
-    - name: Set startup command to bash script (Kudu API)
-      env:
-        AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-      run: |
-        set -e
-        APP_NAME=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -oP '(?<=publishUrl=")[^"]*' | cut -d'.' -f1)
-        USERNAME=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -oP '(?<=userName=")[^"]*')
-        PASSWORD=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -oP '(?<=userPWD=")[^"]*')
-        TARGET_CMD="bash /home/site/wwwroot/startup.sh"
-        echo "Setting STARTUP_COMMAND to '$TARGET_CMD' for $APP_NAME via Kudu..."
-        for i in 1 2 3; do
-          STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
-            "https://${APP_NAME}.scm.azurewebsites.net/api/settings" \
-            -u "${USERNAME}:${PASSWORD}" \
-            -H "Content-Type: application/json" \
-            -d '{"STARTUP_COMMAND":"'"${TARGET_CMD}"'"}')
-          echo "Attempt $i response: $STATUS"
-          if [ "$STATUS" = "200" ] || [ "$STATUS" = "204" ]; then
-            echo "Startup command set successfully."
-            exit 0
-          fi
-          echo "Retrying in 20s..."
-          sleep 20
-        done
-        echo "Failed to set startup command after retries."
-        exit 1
-
-    # Avoid conflict with SCM container restarts by waiting
-    - name: Wait for SCM to stabilize
-      run: |
-        echo "Waiting 60s to avoid SCM restart conflict..."
-        sleep 60
-
-    # Set startup command via Kudu API (publish-profile auth)
-    - name: Set startup command via Kudu API (retry)
-      env:
-        AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-      run: |
-        set -e
-        APP_NAME=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -oP '(?<=publishUrl=")[^"]*' | cut -d'.' -f1)
-        USERNAME=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -oP '(?<=userName=")[^"]*')
-        PASSWORD=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -oP '(?<=userPWD=")[^"]*')
-        TARGET_CMD="/home/site/wwwroot/startup.sh"
-        echo "Setting STARTUP_COMMAND to $TARGET_CMD for $APP_NAME via Kudu..."
-        for i in 1 2 3; do
-          STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
-            "https://${APP_NAME}.scm.azurewebsites.net/api/settings" \
-            -u "${USERNAME}:${PASSWORD}" \
-            -H "Content-Type: application/json" \
-            -d '{"STARTUP_COMMAND":"'"${TARGET_CMD}"'"}')
-          echo "Attempt $i response: $STATUS"
-          if [ "$STATUS" = "200" ] || [ "$STATUS" = "204" ]; then
-            echo "Startup command set successfully."
-            exit 0
-          fi
-          echo "Retrying in 20s..."
-          sleep 20
-        done
-        echo "Failed to set startup command after retries."
-        exit 1
+        package: .
