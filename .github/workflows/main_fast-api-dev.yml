@@ -11,12 +11,6 @@ on:
         type: boolean
         default: false
 
-# env:
-#   AZURE_WEBAPP_NAME: 'your-webapp-name'      # Your Azure Web App name
-#   AZURE_RESOURCE_GROUP: 'your-resource-group'       # Your Azure Resource Group
-#   AZURE_WEBAPP_SLOT_NAME: 'staging'                        # Staging slot name
-#   SLOT_HEALTH_CHECK_URL: 'https://your-webapp-name-staging.azurewebsites.net/health'
-
 jobs:
   build:
     name: 🔨 Packaging the app
