@@ -52,6 +52,13 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Set Azure subscription
+        run: az account set --subscription "270ea0f5-3ed6-4fd0-854e-f0573a3ff64c"
+
+      - name: Verify slot exists
+        run: |
+          az webapp deployment slot list --name fast-api-test --resource-group fast-api-test --query "[].name" -o table
+
       - name: Deploy to Staging Slot
         uses: azure/webapps-deploy@v3
         with:
