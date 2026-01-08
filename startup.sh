@@ -7,6 +7,7 @@ echo "Starting FastAPI app on port 8000..."
 if [ -d "/home/site/wwwroot/antenv" ]; then
     echo "Activating virtual environment..."
     source /home/site/wwwroot/antenv/bin/activate
+    pip install -r requirements.txt
 fi
 
 # Start uvicorn with the app
