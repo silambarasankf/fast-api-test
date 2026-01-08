@@ -12,7 +12,7 @@ class Item(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to FastAPI! This is a version 2 update."}
+    return {"message": "Welcome to FastAPI! This is a version 3 update."}
 
 
 @app.get("/health")
