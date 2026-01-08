@@ -18,22 +18,22 @@ on:
 #   SLOT_HEALTH_CHECK_URL: 'https://your-webapp-name-staging.azurewebsites.net/health'
 
 jobs:
-  # build:
-  #   name: 🔨 Build Application
-  #   runs-on: ubuntu-latest
+  build:
+    name: 🔨 Build Application
+    runs-on: ubuntu-latest
     
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #     - name: Upload build artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: webapp-package
-  #         path: |
-  #           app/
-  #           requirements.txt
-  #         retention-days: 1
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-package
+          path: |
+            app/
+            requirements.txt
+          retention-days: 1
 
   deploy-to-staging-slot:
     name: 🚀 Deploy to Staging Slot
@@ -52,17 +52,12 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Set Azure subscription
-        run: az account set --subscription "270ea0f5-3ed6-4fd0-854e-f0573a3ff64c"
-
-      - name: Verify slot exists
-        run: |
-          az webapp deployment slot list --name fast-api-test --resource-group fast-api-test --query "[].name" -o table
-
       - name: Deploy to Staging Slot
-        run: |
-          zip -r ./deploy.zip app requirements.txt
-          az webapp deploy --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} --slot ${{ vars.AZURE_WEBAPP_SLOT_NAME }} --src-path ./deploy.zip --type zip
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          slot-name: ${{ vars.AZURE_WEBAPP_SLOT_NAME }}
+          package: ./package
 
       - name: Logout from Azure
         run: az logout
